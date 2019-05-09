@@ -134,24 +134,25 @@ def StoreTrainTestDataIntoNeo4j(test,train):
     for i in range(0,len(train)):
         if train[i][2] == 'exist':
             updateRelationshipaddProperty(train[i],'train')
-        else:
+        if train[i][2] == 'nonexist':
             addNewRelationshipaddProperty(train[i],'train')
 
     for i in range(0, len(test)):
         if test[i][2] == 'exist':
             updateRelationshipaddProperty(test[i], 'test')
-        else:
+        if test[i][2] == 'nonexist':
             addNewRelationshipaddProperty(test[i], 'test')
 #-----------------------------------------------------------------------------------------------------------------------------------------------
 def updateRelationshipaddProperty(row,edgeType):
     #update relationship
     # add a property to relationship which can be  'train' or 'test'
-    graph.run("MATCH (n:page {PageID:{PageID1}})-[r:LINKS_TO]->(m:page {PageID:{PageID2}}) CREATE (n)- [r2:exist { edgeType:{EdgeType}}]-> (m) SET r2 = r WITH r DELETE r",PageID1=int(row[0]),PageID2=int(row[1]),EdgeType=edgeType)
+    # SET r2 = r WITH r DELETE r
+    graph.run("MATCH (n:page {PageID:{PageID1}})-[r:LINKS_TO]->(m:page {PageID:{PageID2}}) CREATE UNIQUE (n)- [r2:exist { edgeType:{EdgeType}}]-> (m)",PageID1=int(row[0]),PageID2=int(row[1]),EdgeType=edgeType)
 #------------------------------------------------------------------------------------------------------------------------------------------------
 def addNewRelationshipaddProperty(row,edgeType):
     # create new relationship
     # add a property to relationship which can be  'train' or 'test'
-    graph.run("MATCH(page1: page {PageID: {PageID1}}), (page2: page {PageID: {PageID2}}) CREATE (page1)- [r: nonexist {edgeType:{EdgeType}}]-> (page2)",PageID1=int(row[0]), PageID2=int(row[1]),EdgeType=edgeType)
+    graph.run("MATCH(page1: page {PageID: {PageID1}}), (page2: page {PageID: {PageID2}}) CREATE UNIQUE (page1)- [r:nonexist {edgeType:{EdgeType}}]-> (page2)",PageID1=int(row[0]), PageID2=int(row[1]),EdgeType=edgeType)
 #------------------------------------------------------------------------------------------------------------------------------------------------
 """randomly Splitting our dataset with a ratio of 67% train and 33% test """
 def splitDataset(training_data,splitRatio):
