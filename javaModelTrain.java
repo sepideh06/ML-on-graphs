@@ -90,7 +90,7 @@ public class javaModelTrain {
 		 List<Pair<Integer, Integer>> linkedPageIDs = new ArrayList<Pair<Integer, Integer>>();
 		 Integer skip=0;
 		
-		 /*
+		 
 		 Random random = new Random();
 		 try (Session session = driver.session()) {
 			 Integer numEdges = Integer.parseInt(session.run("MATCH (a:page)-[r:LINKS_TO]->() RETURN COUNT(r)").next().get("COUNT(r)").toString());
@@ -186,15 +186,16 @@ public class javaModelTrain {
 				         
 				 //System.out.println("Train..." + train);
 				 //System.out.println("Test..." + test);
-			*/	 
+				 
 				 
 		//Now we create nodes for train and test
+				 /*
 		 for(int i=0;i<10000000;i++)
 		 {
 			 train.add(Integer.toString(i) + "," + "exist");
 			 test.add(Integer.toString(i) + "," + "exist");
 		 }
-		 
+		 */
 				 CreateNodesTrainTest(tag,train,test);
 		 return results;
 		 
