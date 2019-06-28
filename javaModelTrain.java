@@ -94,7 +94,7 @@ public class javaModelTrain {
 		 Random random = new Random();
 		 try (Session session = driver.session()) {
 			 Integer numEdges = Integer.parseInt(session.run("MATCH (a:page)-[r:LINKS_TO]->() RETURN COUNT(r)").next().get("COUNT(r)").toString());
-			 System.out.println(numEdges);
+			 System.out.println("num" + " " + numEdges.toString());
 			 while (skip<numEdges){
 			 StatementResult listOfIds = session.run("MATCH (a:page)-[r:LINKS_TO]->(b:page) RETURN distinct a.PageID,b.PageID SKIP {skip} LIMIT 1000; ", Values.parameters("skip",skip));
 			 listOfIds.stream().forEach(cand->{
@@ -189,13 +189,6 @@ public class javaModelTrain {
 				 
 				 
 		//Now we create nodes for train and test
-				 /*
-		 for(int i=0;i<10000000;i++)
-		 {
-			 train.add(Integer.toString(i) + "," + "exist");
-			 test.add(Integer.toString(i) + "," + "exist");
-		 }
-		 */
 				 CreateNodesTrainTest(tag,train,test);
 		 return results;
 		 
@@ -210,17 +203,21 @@ public void CreateNodesTrainTest(String tag,List<String> train,List<String> test
 	 Integer skip=0;
 	 
 	 try (Session session = driver.session()) {
-		 session.run("CREATE (a:Train { tag: {tag}, data:{data} })", Values.parameters("tag",tag, "data", train.subList(0, 1000000)));
-		 session.run("CREATE (a:Test { tag: {tag}, data:{data}})", Values.parameters("tag",tag, "data", test.subList(0, 1000000)));
-		 skip = 1000000;
-		 while (skip<train.size()){
-		 session.run("MATCH (a:Train { tag: {tag}) SET n.data=n.data+{data}", Values.parameters("tag",tag, "data", train.subList(skip, skip+1000000)));
+		 if(train.size() > 0)
+		 {
+			 session.run("CREATE (a:Train { tag: {tag}, data:{data} })", Values.parameters("tag",tag, "data", train.subList(0, 1000000)));
+			 session.run("CREATE (a:Test { tag: {tag}, data:{data} })", Values.parameters("tag",tag, "data", test.subList(0, 1000000)));
 		 }
 		 skip = 1000000;
-		 while (skip<test.size()){
-		 session.run("MATCH (a:Test { tag: {tag}) SET n.data=n.data+{data}", Values.parameters("tag",tag, "data", test.subList(skip, skip+1000000)));
+		 while (skip<train.size()){
+			 session.run("MATCH (a:Train { tag: {tag}) SET n.data=n.data+{data}", Values.parameters("tag",tag, "data", train.subList(skip, skip+1000000)));
+			 skip+=1000;
+		 }
 		 
-		 //skip+=1000;
+		 skip = 1000000;
+		 while (skip<test.size()){
+			 session.run("MATCH (a:Test { tag: {tag}) SET n.data=n.data+{data}", Values.parameters("tag",tag, "data", test.subList(skip, skip+1000000)));
+			 skip+=1000;
 		 }
 		 session.close();
 	 }
