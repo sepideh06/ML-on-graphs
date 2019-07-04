@@ -49,10 +49,10 @@ public class javaModelTrain {
 		    	 Session session2 = driver.session();
 		    	 long nodeId = session2.run( "CREATE (p:trainingData {TrainID:{trainID}, Data:{data}}) RETURN id(p)", Values.parameters("trainID", idTrain, "data", existentThings))
 		                    .single()
-		                    .get( 0 ).asLong();
+		                    .get(0).asLong();
 		    	 long nodeI2 = session2.run( "CREATE (p:testingData {TestID:{testID}}) RETURN id(p)", Values.parameters("testID", idTest))
 		                    .single()
-		                    .get( 0 ).asLong();
+		                    .get(0).asLong();
 		    	 
 		    	 /* First we store a list of strings. This will be comma separated, with an exists... This is the list that we split randomly into train and test. 
 		    	  * We also pass it to a set.
@@ -93,10 +93,11 @@ public class javaModelTrain {
 		 
 		 Random random = new Random();
 		 try (Session session = driver.session()) {
-			 Integer numEdges = Integer.parseInt(session.run("MATCH (a:page)-[r:LINKS_TO]->() RETURN COUNT(r)").next().get("COUNT(r)").toString());
-			 System.out.println("num" + " " + numEdges.toString());
-			 while (skip<numEdges){
-			 StatementResult listOfIds = session.run("MATCH (a:page)-[r:LINKS_TO]->(b:page) RETURN distinct a.PageID,b.PageID SKIP {skip} LIMIT 1000; ", Values.parameters("skip",skip));
+			 //Integer numEdges = Integer.parseInt(session.run("MATCH (a:page)-[r:LINKS_TO]->() RETURN COUNT(r)").next().get("COUNT(r)").toString());
+			 //System.out.println("num" + " " + numEdges.toString());
+			 //while (skip<numEdges){
+			 //StatementResult listOfIds = session.run("MATCH (a:page)-[r:LINKS_TO]->(b:page) RETURN distinct a.PageID,b.PageID SKIP {skip} LIMIT 1000; ", Values.parameters("skip",skip));
+			 StatementResult listOfIds = session.run("MATCH (a:page)-[r:LINKS_TO]->(b:page) RETURN distinct a.PageID,b.PageID;");
 			 listOfIds.stream().forEach(cand->{
 				 
 				 
@@ -120,10 +121,10 @@ public class javaModelTrain {
 				 }
 				 });
 			 
-			 System.out.println(skip);
+			 //System.out.println(skip);
 			 //System.out.println("Enter");
-			 skip+=1000;
-			 }
+			 //skip+=1000;
+			 //}
 			 session.close();
 		 }
 		 driver.close();
@@ -202,12 +203,17 @@ public void CreateNodesTrainTest(String tag,List<String> train,List<String> test
 	 Driver driver = GraphDatabase.driver("bolt://localhost:7687", AuthTokens.basic("neo4j", "123"));
 	 Integer skip=0;
 	 
+	 System.out.println("Train..." + train.size());
+	 System.out.println("Test..." + test.size()); 
+	 
+	 
 	 try (Session session = driver.session()) {
 		 if(train.size() > 0)
 		 {
-			 session.run("CREATE (a:Train { tag: {tag}, data:{data} })", Values.parameters("tag",tag, "data", train.subList(0, 1000000)));
-			 session.run("CREATE (a:Test { tag: {tag}, data:{data} })", Values.parameters("tag",tag, "data", test.subList(0, 1000000)));
+			 session.run("CREATE (a:Train { tag: {tag}, data:{data} })", Values.parameters("tag",tag, "data", train));
+			 session.run("CREATE (a:Test { tag: {tag}, data:{data}})", Values.parameters("tag",tag, "data", test));
 		 }
+		 /*
 		 skip = 1000000;
 		 while (skip<train.size()){
 			 session.run("MATCH (a:Train { tag: {tag}) SET n.data=n.data+{data}", Values.parameters("tag",tag, "data", train.subList(skip, skip+1000000)));
@@ -218,7 +224,7 @@ public void CreateNodesTrainTest(String tag,List<String> train,List<String> test
 		 while (skip<test.size()){
 			 session.run("MATCH (a:Test { tag: {tag}) SET n.data=n.data+{data}", Values.parameters("tag",tag, "data", test.subList(skip, skip+1000000)));
 			 skip+=1000;
-		 }
+		 }*/
 		 session.close();
 	 }
 	 driver.close();
