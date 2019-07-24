@@ -1830,36 +1830,64 @@ public boolean ComparingPageCommunityId(Map<String,List<String>> pageCommunityDi
 	 				// dump with feature map
 	 				String[] model_dump_with_feature_map = booster.getModelDump("featureMap.txt", false);
 	 			    booster = XGBoost.loadModel("model.bin");
-	 			   /* for(int o = 0;o < labelsTest.length;o++)
-	 			    {
-	 			    		//System.out.println(labelsTest[o]);
-	 			    }
-	 			   int c1count=0;
-	 			   int c2count=0;
-	 			   for(int o = 0;o < labelsTrain.length;o++)
-	 			    {
-	 				  if (labelsTrain[o]==0) {c1count+=1;}
-	 				  else {c2count+=1;}
-	 					//System.out.println(labelsTrain[o]);
-	 			    }
-	 			    System.out.println(c1count);
-	 			    System.out.println(c2count);*/
-	 			// predict
+	 			    
 	 				float[][] predicts = booster.predict(testMat);
-	 				System.out.println("predicts..." + predicts[4][0] + " for class 0 and "+predicts[4][1]+"for class 1... The real label was:"+testMat.getLabel()[4]);
+	 				System.out.println("predicts..." + predicts[0][0] + " for class 1 and "+predicts[0][1]+"for class 0... The real label was:"+testMat.getLabel()[0]);
 	 				System.out.println(exmp.checkPredicts(predicts, predicts));
 	 				// predict leaf
 	 				//float[][] leafPredicts = booster.predictLeaf(testMat, 0);
 	 				
-	 				//SaveModelToNeo4j(session,tag);
+	 				float[] statisticInfo = confusionMatrix(testMat,predicts);
+	 				System.out.println("accuracy:"+statisticInfo[0] + "...."+
+	 						"precision:"+statisticInfo[1]+"....."+
+	 						"errorRate:"+statisticInfo[2]+"...."+
+	 						"recall:"+statisticInfo[3]+"....."+
+	 						"FScore:"+statisticInfo[4]);
+	 				SaveModelToNeo4j(session,tag,statisticInfo);
 	 				
 	         session.close();
-	 		
-	         
+	 		         
 			 
 			}
 				 driver.close();
 			} 
+//-----------------------------------------------------------------------------------------------------------
+	public float[] confusionMatrix(DMatrix testMat,float[][] predicts) throws XGBoostError
+	{
+		float[] statisticInfo= new float[5];
+		float noNo = 0; float noYes = 0; float yesNo = 0; float yesYes = 0;
+		float predictedValue = 2;
+		for(int i = 0;i < predicts.length;i++)
+		{
+			if(predicts[i][0] > predicts[i][1])
+				predictedValue = 1;
+			else
+				predictedValue = 0;
+		    if(testMat.getLabel()[i] == 1 && predictedValue == 1)
+		    	yesYes =+ 1;
+		    else if(testMat.getLabel()[i] == 0 && predictedValue == 0)
+		    	noNo =+ 1;
+		    else if(testMat.getLabel()[i] == 0 && predictedValue == 1)
+		    	noYes =+ 1;
+		    else if(testMat.getLabel()[i] == 1 && predictedValue == 0)
+		    	yesNo =+ 1;		    
+		}
+		//(TP+TN)/total 
+		float accuracy = (noNo + yesYes) /(noNo+yesYes+yesNo+noYes);
+		// TP/predicted yes
+		float precision = yesYes / (noYes + yesYes);
+		float errorRate = 1-accuracy;
+		// TP/actual yes 
+		float recall = yesYes / (yesYes + yesNo);
+		float FScore = 2*((precision*recall)/(precision+recall));
+		
+		statisticInfo[0] = accuracy;
+		statisticInfo[1] = precision;
+		statisticInfo[2] = errorRate;
+		statisticInfo[3] = recall;
+		statisticInfo[4] = FScore;
+		return statisticInfo;
+	}
 //------------------------------------------------------------------------------------------------------------
 	public static boolean checkPredicts(float[][] fPredicts, float[][] sPredicts) {
 	    if (fPredicts.length != sPredicts.length) {
@@ -1875,18 +1903,17 @@ public boolean ComparingPageCommunityId(Map<String,List<String>> pageCommunityDi
 	    return true;
 	}
 //-------------------------------------------------------------------------------------------------------------
-public void SaveModelToNeo4j(Session session,String tag) throws IOException
+public void SaveModelToNeo4j(Session session,String tag,float[] statisticInfo) throws IOException
 {
 	String fileName = "model.bin";
 	Path path = Paths.get(fileName);
 	byte[] bytes = Files.readAllBytes(path);
 	 if(bytes.length > 0)
 	 {
-		 session.run("CREATE (a:Model { tag: {tag}, data:{data} })", Values.parameters("tag",tag, "data", bytes));
+		 session.run("CREATE (a:Model { tag: {tag}, modelData:{data}, accuracy:{accuracy}, precision:{precision}, errorRate:{errorRate}, recall:{recall}, Fscore:{Fscore}})",
+				 Values.parameters("tag",tag, "data", bytes,"accuracy",statisticInfo[0],"precision",statisticInfo[1],"errorRate",statisticInfo[2],"recall",statisticInfo[3],"Fscore",statisticInfo[4]));
 	 }
-}
-
-	
+}	
 }
 //-------------------------------------------------------------------------------------------------------------
 
