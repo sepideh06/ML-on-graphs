@@ -44,7 +44,8 @@ public class mainClass {
 		// TODO Auto-generated method stub
 		example.javaModelTrain instance = new example.javaModelTrain();	
 		//instance.CreateModel();
-		instance.CreateSecondModel("modelTag");
+		//instance.CreateSecondModel("modelTag");
+		 instance.ModelInference("modelTag", "1,2,3,4,5,....");
 		//instance.splitData(0.67f,"Tag");
 	}
 	/*
