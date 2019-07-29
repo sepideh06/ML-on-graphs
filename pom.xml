@@ -12,7 +12,7 @@
   <description>A template project for building a Neo4j Procedure</description>
 
   <properties>
-    <neo4j.version>3.5.2</neo4j.version>
+    <neo4j.version>3.5.4</neo4j.version>
   </properties>
 
   <dependencies>
@@ -70,13 +70,19 @@
       <version>1.2</version>
     </dependency> 
     
+    <dependency>
+      <groupId>ml.dmlc</groupId>
+      <artifactId>xgboost4j</artifactId>
+      <version>0.90</version>
+   </dependency>
+
     <!-- https://mvnrepository.com/artifact/commons-logging/commons-logging -->
 <dependency>
     <groupId>commons-logging</groupId>
     <artifactId>commons-logging</artifactId>
     <version>1.2</version>
 </dependency>
-    
+  
       
      
                
