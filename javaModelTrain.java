@@ -152,7 +152,7 @@ public class javaModelTrain {
 					{
 				          train.add(pairId.getValue(0).toString()+","+pairId.getValue(1).toString()+","+"nonexist");
 					}
-				 for (Pair<Integer, Integer> pairId : trainNonExist)
+				 for (Pair<Integer, Integer> pairId : testNonExist)
 					{
 				          test.add(pairId.getValue(0).toString()+","+pairId.getValue(1).toString()+","+"nonexist");
 					}
@@ -667,5 +667,3 @@ public static class Output {
 }
 //-------------------------------------------------------------------------------------------------------------
 }
-//-------------------------------------------------------------------------------------------------------------
-
