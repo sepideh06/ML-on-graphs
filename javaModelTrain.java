@@ -10,30 +10,24 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
+import java.util.stream.Stream;
 
 import org.bouncycastle.util.Arrays.Iterator;
 import org.javatuples.Pair;
 import org.javatuples.Triplet;
-import org.neo4j.driver.v1.AuthTokens;
-import org.neo4j.driver.v1.Driver;
-import org.neo4j.driver.v1.GraphDatabase;
-import org.neo4j.driver.v1.Record;
-import org.neo4j.driver.v1.Session;
-import org.neo4j.driver.v1.StatementResult;
-import org.neo4j.driver.v1.Transaction;
-import org.neo4j.driver.v1.TransactionWork;
-import org.neo4j.driver.v1.Values;
+
 import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Result;
+import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 import org.neo4j.procedure.*;
 import org.neo4j.procedure.Description;
 import org.neo4j.procedure.Mode;
 import org.neo4j.procedure.Name;
-import org.neo4j.procedure.PerformsWrites;
 import org.neo4j.procedure.Procedure;
 import org.neo4j.procedure.UserFunction;
 
@@ -41,18 +35,27 @@ import ml.dmlc.xgboost4j.java.Booster;
 import ml.dmlc.xgboost4j.java.XGBoost;
 import ml.dmlc.xgboost4j.java.XGBoostError;
 import ml.dmlc.xgboost4j.java.DMatrix;
-
+import org.neo4j.driver.v1.AuthTokens;
+import org.neo4j.driver.v1.Driver;
+import org.neo4j.driver.v1.GraphDatabase;
+import org.neo4j.driver.v1.Record;
+import org.neo4j.driver.v1.Session;
+import org.neo4j.driver.v1.StatementResult;
+import org.neo4j.driver.v1.TransactionWork;
+import org.neo4j.driver.v1.Values;
 import static org.neo4j.driver.v1.Values.parameters;
+
 public class javaModelTrain {
     
     @Context
-    public GraphDatabase db;
-	
+    public GraphDatabaseService db;
+
 	@Procedure(value = "example.splitData", mode=Mode.WRITE)
-    @Description("it splits data into train and test")
-	 public void splitData(@Name("cutoff") float cutoff,@Name("tag") String tag) {
+        @Description("it splits data into train and test")
+	 public void splitData(@Name("cutoff") double cutoff2, @Name("tag") String tag) {
+                float cutoff = (float)cutoff2;
 		 //This should return the id of train node, the id of test node
-		 Driver driver = db.driver("bolt://localhost:7687", AuthTokens.basic("neo4j", "123"));
+		 Driver driver = GraphDatabase.driver("bolt://localhost:7687", AuthTokens.basic("neo4j", "123"));
 		 List<String> train = new ArrayList<>();
 		 List<String> test = new ArrayList<>();
 		 ArrayList<Integer> pageIDs = new ArrayList<>();
@@ -71,16 +74,16 @@ public class javaModelTrain {
 				 
 				 
 				 if(pageIDs.contains(cand.get("a.PageID"))== false)
-					 pageIDs.add(Integer.parseInt(cand.get("a.PageID").toString()));
+					 pageIDs.add(Integer.parseInt(cand.get("a.PageID").toString().replace("\"","")));
 				 
 				 if(pageIDs.contains(cand.get("b.PageID"))== false)
-					 pageIDs.add(Integer.parseInt(cand.get("b.PageID").toString()));
+					 pageIDs.add(Integer.parseInt(cand.get("b.PageID").toString().replace("\"","")));
 					 
-				 linkedPageIDs.add(new Pair<Integer, Integer>(Integer.parseInt(cand.get("a.PageID").toString()), Integer.parseInt(cand.get("b.PageID").toString()))); 
+				 linkedPageIDs.add(new Pair<Integer, Integer>(Integer.parseInt(cand.get("a.PageID").toString().replace("\"","")), Integer.parseInt(cand.get("b.PageID").toString().replace("\"","")))); 
 					 
-				 String pairToInsert=cand.get("a.PageID").toString();
+				 String pairToInsert=cand.get("a.PageID").toString().replace("\"","");
 				 
-				 pairToInsert+=","+cand.get("b.PageID").toString()+","+"exist";
+				 pairToInsert+=","+cand.get("b.PageID").toString().replace("\"","")+","+"exist";
 				 
 				 if (random.nextFloat()<=cutoff){
 					 train.add(pairToInsert);
@@ -118,9 +121,9 @@ public class javaModelTrain {
 		 
 		 for (Pair<Integer, Integer> pairId : cartesianProductList)
 		{
-			 sameCommunityflag = ComparingPageCommunityId(dicPageCommunity, Integer.parseInt(pairId.getValue(0).toString()), Integer.parseInt(pairId.getValue(1).toString()));
+			 sameCommunityflag = ComparingPageCommunityId(dicPageCommunity, Integer.parseInt(pairId.getValue(0).toString().replace("\"","")), Integer.parseInt(pairId.getValue(1).toString().replace("\"","")));
 	            if (pairId.getValue(0) != pairId.getValue(1) && linkedPageIDs.contains(pairId) == false && sameCommunityflag == true)
-	            	lstNonExistPagelinks.add(new Pair<Integer, Integer>(Integer.parseInt(pairId.getValue(0).toString()), Integer.parseInt(pairId.getValue(1).toString())));
+	            	lstNonExistPagelinks.add(new Pair<Integer, Integer>(Integer.parseInt(pairId.getValue(0).toString().replace("\"","")), Integer.parseInt(pairId.getValue(1).toString().replace("\"",""))));
 		}
 	            
 		 //System.out.println("Non-Exist List..."+lstNonExistPagelinks);
@@ -159,15 +162,17 @@ public class javaModelTrain {
 				 
 				 
 		//Now we create nodes for train and test
-				 CreateNodesTrainTest(tag,train,test);		 
+				 CreateNodesTrainTest(tag,train,test);		
 	   }
+	   
 //-------------------------------------------------------------------------------------------------------
+    
 public void CreateNodesTrainTest(String tag,List<String> train,List<String> test)
 {
 	//Now we create train and test
 	 String[] results = new String[2];
 	 //This should return the id of train node, the id of test node
-	 Driver driver = db.driver("bolt://localhost:7687", AuthTokens.basic("neo4j", "123"));
+	 Driver driver = GraphDatabase.driver("bolt://localhost:7687", AuthTokens.basic("neo4j", "123"));
 	 Integer skip=0;
 	 
 	 System.out.println("Train..." + train.size());
@@ -192,28 +197,29 @@ public void CreateNodesTrainTest(String tag,List<String> train,List<String> test
 			 session.run("MATCH (a:Test { tag: {tag}) SET n.data=n.data+{data}", Values.parameters("tag",tag, "data", test.subList(skip, skip+1000000)));
 			 skip+=1000;
 		 }*/
+    
 		 session.close();
 	 }
 	 driver.close();
-
+	 
 }
 
 //-----------------------------------------------------------------------------------------------------
-	 
+
 public Map<String, List<String>> GetCommunityIds(ArrayList<Integer> PageIDs)
 {
-	Driver driver = db.driver("bolt://localhost:7687", AuthTokens.basic("neo4j", "123"));
+	Driver driver = GraphDatabase.driver("bolt://localhost:7687", AuthTokens.basic("neo4j", "123"));
 	Integer skip=0;
 	Map<String, List<String>> dicPageCommunity = new HashMap<String, List<String>>();
 	 
 	try (Session session = driver.session()) {
-		 Integer numEdges = Integer.parseInt(session.run("MATCH (a:page)-[r:LINKS_TO]->() RETURN COUNT(r)").next().get("COUNT(r)").toString());
+		 Integer numEdges = Integer.parseInt(session.run("MATCH (a:page)-[r:LINKS_TO]->() RETURN COUNT(r)").next().get("COUNT(r)").toString().replace("\"",""));
 		 System.out.println(numEdges);
 		 while (skip<numEdges){
 		 StatementResult listOfIds = session.run("MATCH (a:page) RETURN a.PageID,a.CommunityID SKIP {skip} LIMIT 1000; ", Values.parameters("skip",skip));
 		 listOfIds.stream().forEach(cand->{
 			 
-		            if (PageIDs.contains(Integer.parseInt(cand.get("a.PageID").toString())))
+		            if (PageIDs.contains(Integer.parseInt(cand.get("a.PageID").toString().replace("\"",""))))
 		            		{
 				                List<String> pageIdList = new ArrayList<String>();
 				                if (dicPageCommunity.get(cand.get("a.CommunityID").toString()) == null)
@@ -239,9 +245,8 @@ public Map<String, List<String>> GetCommunityIds(ArrayList<Integer> PageIDs)
 	 
 	 return dicPageCommunity;
 	}
-
-
 //-----------------------------------------------------------------------------------------------------
+    
 public List<Pair<Integer, Integer>> cartesian(ArrayList<Integer> array1) {
 
     List<Pair<Integer, Integer>> partnerPlatformPairList = new ArrayList<Pair<Integer, Integer>>();
@@ -275,12 +280,13 @@ public boolean ComparingPageCommunityId(Map<String,List<String>> pageCommunityDi
 		    else
 		    	return false;
 }
-//-------------------------------------------------------------------------------------------------------------------------------------------------------------	
+//-------------------------------------------------------------------------------------------------------------------------------------------------------------
+ 
 	@Procedure(value = "example.CreateSecondModel", mode=Mode.WRITE)
-    @Description("create model")
+        @Description("create model")
 	public void CreateSecondModel(@Name("tag") String tag) throws XGBoostError, IOException 
 	{
-		Driver driver = db.driver("bolt://localhost:7687", AuthTokens.basic("neo4j", "123"));
+		Driver driver = GraphDatabase.driver("bolt://localhost:7687", AuthTokens.basic("neo4j", "123"));
 		
 		String[] arrayTest = new String[]{};
 		String[] arrayTrain = new String[]{};
@@ -298,32 +304,42 @@ public boolean ComparingPageCommunityId(Map<String,List<String>> pageCommunityDi
 			 arrayTest = listOfTestData.get(0).get("data").toString().split(" ");
 			 arrayTrain = listOfTrainData.get(0).get("data").toString().split(" ");
 			 
-			 
 				
-				long[] rowHeadersTest = new long[603*arrayTest.length];
+			float[] rowHeadersTest = new float[603*arrayTest.length];
 		        float[] dataTest = new float[603*arrayTest.length];
 		        int[] colIndexTest = new int[603*arrayTest.length];
 		        float[] labelsTest = new float[arrayTest.length];  
 		        
-		        long[] rowHeadersTrain = new long[603*arrayTrain.length];
+		        float[] rowHeadersTrain = new float[603*arrayTrain.length];
 		        float[] dataTrain = new float[603*arrayTrain.length];
 		        int[] colIndexTrain = new int[603*arrayTrain.length];
 		        float[] labelsTrain = new float[arrayTrain.length];
 		        
 			 String label = "";
-			 rowHeadersTest[0]=0;
+			 //rowHeadersTest[0]=0;
 			 int h = 0;
 	         for(int i= 0;i < arrayTest.length ;i++)
 	         {
+
 	        	 String[] str = arrayTest[i].replace("\"", "").replace("[", "").replace("]", "").split(",");
-	        	 List<Record> embeddingPageID1 = session.run("MATCH (n:page) WHERE n.PageID = {pageID} RETURN n.Embedding AS Embedding",Values.parameters("pageID",Integer.parseInt(str[0]))).list();
-	        	 List<Record> embeddingPageID2 = session.run("MATCH (n:page) WHERE n.PageID = {pageID} RETURN n.Embedding AS Embedding",Values.parameters("pageID",Integer.parseInt(str[1]))).list();
-	        	 String[] embedArray1 = embeddingPageID1.get(0).get("Embedding").toString().replace("\"", "").split(",");
-	        	 String[] embedArray2 = embeddingPageID2.get(0).get("Embedding").toString().replace("\"", "").split(",");
-	        	 
+	        	 List<Record> embeddingPageID1 = session.run("MATCH (n:page) WHERE n.PageID = {pageID} RETURN n.Embedding AS Embedding",Values.parameters("pageID",str[0])).list();
+	        	 List<Record> embeddingPageID2 = session.run("MATCH (n:page) WHERE n.PageID = {pageID} RETURN n.Embedding AS Embedding",Values.parameters("pageID",str[1])).list();
+
+	        	 String[] embedArray1 = new String[] {};
+                         String[] embedArray2 = new String[] {};
+		         if(embeddingPageID1.size() > 0)
+		         {
+		             embedArray1 = embeddingPageID1.get(0).get("Embedding").toString().replace("\"", "").split(",");
+		         }
+		         if(embeddingPageID2.size() > 0)
+		         {
+		             embedArray2 = embeddingPageID2.get(0).get("Embedding").toString().replace("\"", "").split(",");
+		         }
+
+
 	        	 if(str[2].replace(" ", "").contains("nonexist"))
 	        	 {
-	        		 label = "0";
+	        	     label = "0";
 	        	     labelsTest[i] = 0;
 	        	 }
 	        	 else
@@ -332,84 +348,7 @@ public boolean ComparingPageCommunityId(Map<String,List<String>> pageCommunityDi
 	        		 labelsTest[i] = 1;
 	        	 }
 	        	 
-	        	 
-	        	 
-	        	 String[] embeddingArray1 = Arrays.copyOf(embedArray1, 301);
-	        	 String[] embeddingArray2 = Arrays.copyOf(embedArray2, 301);
-	        	 for(int k= embedArray1.length-1;k<301;k++)
-	        	 {
-	        		 embeddingArray1[k]="1";
-	        	 }
-	        	 for(int k= embedArray2.length-1;k<301;k++)
-	        	 {
-	        		 embeddingArray2[k]="1";
-	        	 }
-	        	 
-	        	 if(h < 603*arrayTest.length)
-	        	 {
-		        	 dataTest[h] = Float.parseFloat(label);
-		        	 h = h + 1;
-		        	 dataTest[h] = Float.parseFloat(str[0]);
-		        	 h = h + 1;
-		        	 dataTest[h] = Float.parseFloat(str[1]);
-		        	 h = h + 1;
-		        	 for(int k= 0;k<300;k++)
-		        	 {
-		        		 dataTest[h+k]=Float.parseFloat(embeddingArray1[k]);
-		        	 }
-		        	 h = h + 301;
-		        	 //System.out.println("h..." + h);
-		        	 for(int k= 0;k<300;k++)
-		        	 {
-		        		 if(h+k < (603*arrayTest.length))
-		        		 {
-		        		    dataTest[h+k]=Float.parseFloat(embeddingArray2[k]);
-		        		 }
-		        	 }
-		        	 h = h + 301;
-		        	 
-		        	 
-		        	 rowHeadersTest[i+1] = rowHeadersTest[i]+603;
-	        	 }
-	         }
-	         
-	         int b = 0;
-	         for(int l = 0;l < dataTest.length;l++)
-        	 {
-	        	 if(b == 603)
-	        	 {
-	        		 b = 0;
-        		    colIndexTrain[l]= 0;
-	        	 }
-	        	 else
-	        	 {
-	        		 colIndexTrain[l]= b;
-	        	 }
-	        	 b = b + 1;
-        	 }
-	         
-	         //Traindata
-	         label = "";
-			 rowHeadersTrain[0]=0;
-			 h = 0;
-	         for(int i= 0;i < arrayTrain.length ;i++)
-	         {
-	        	 String[] str = arrayTrain[i].replace("\"", "").replace("[", "").replace("]", "").split(",");
-	        	 List<Record> embeddingPageID1 = session.run("MATCH (n:page) WHERE n.PageID = {pageID} RETURN n.Embedding AS Embedding",Values.parameters("pageID",Integer.parseInt(str[0]))).list();
-	        	 List<Record> embeddingPageID2 = session.run("MATCH (n:page) WHERE n.PageID = {pageID} RETURN n.Embedding AS Embedding",Values.parameters("pageID",Integer.parseInt(str[1]))).list();
-	        	 String[] embedArray1 = embeddingPageID1.get(0).get("Embedding").toString().replace("\"", "").split(",");
-	        	 String[] embedArray2 = embeddingPageID2.get(0).get("Embedding").toString().replace("\"", "").split(",");
-	        	 
-	        	 if(str[2].replace(" ", "").contains("nonexist"))
-	        	 {
-	        		 label = "0";
-	        		 labelsTrain[i] = 0;
-	        	 }
-	        	 else
-	        	 {
-	        		 label = "1";
-	        		 labelsTrain[i] = 1;
-	        	 }
+	        	
 	        	 
 	        	 String[] embeddingArray1 = Arrays.copyOf(embedArray1, 300);
 	        	 String[] embeddingArray2 = Arrays.copyOf(embedArray2, 300);
@@ -421,8 +360,84 @@ public boolean ComparingPageCommunityId(Map<String,List<String>> pageCommunityDi
 	        	 {
 	        		 embeddingArray2[k]="1";
 	        	 }
+	        	
+	        	 if(h <= (603*arrayTest.length)-603)
+	        	 {
+		        	 dataTest[h] = Float.parseFloat(label);
+		        	 h = h + 1;
+		        	 dataTest[h] = Float.parseFloat(str[0]);
+		        	 h = h + 1;
+		        	 dataTest[h] = Float.parseFloat(str[1]);
+		        	 h = h + 1;
+		        	 for(int k= 0;k<300;k++)
+		        	 {
+					if(h+k <= (603*arrayTest.length)-600)
+					{
+		        		 	dataTest[h+k]=Float.parseFloat(embeddingArray1[k]);
+					}
+		        	 }
+		        	 h = h + 301;
+		        	 //System.out.println("h..." + h);
+		        	 for(int k= 0;k<300;k++)
+		        	 {
+		        		 if(h+k <= (603*arrayTest.length)-300)
+		        		 {
+		        		    dataTest[h+k]=Float.parseFloat(embeddingArray2[k]);
+		        		 }
+		        	 }
+		        	 h = h + 301;
+		        	 
+		        	 
+		        	 //rowHeadersTest[i+1] = rowHeadersTest[i]+603;
+	        	 }
+	         }
+	       
+	         
+	         //Traindata
+	         label = "";
+			 //rowHeadersTrain[0]=0;
+			 h = 0;
+	         for(int i= 0;i < arrayTrain.length ;i++)
+	         {
+	        	 String[] str = arrayTrain[i].replace("\"", "").replace("[", "").replace("]", "").split(",");
+	        	 List<Record> embeddingPageID1 = session.run("MATCH (n:page) WHERE n.PageID = {pageID} RETURN n.Embedding AS Embedding",Values.parameters("pageID",str[0])).list();
+	        	 List<Record> embeddingPageID2 = session.run("MATCH (n:page) WHERE n.PageID = {pageID} RETURN n.Embedding AS Embedding",Values.parameters("pageID",str[1])).list();
 	        	 
-	        	 if(h < 603*arrayTrain.length)
+			 String[] embedArray1 = new String[] {};
+                         String[] embedArray2 = new String[] {};
+		         if(embeddingPageID1.size() > 0)
+		         {
+		             embedArray1 = embeddingPageID1.get(0).get("Embedding").toString().replace("\"", "").split(",");
+		         }
+		         if(embeddingPageID2.size() > 0)
+		         {
+		             embedArray2 = embeddingPageID2.get(0).get("Embedding").toString().replace("\"", "").split(",");
+		         }
+
+	        	 
+	        	 if(str[2].replace(" ", "").contains("nonexist"))
+	        	 {
+	        		 label = "0";
+	        		 labelsTrain[i] = 0;
+	        	 }
+	        	 else
+	        	 {
+	        		 label = "1";
+	        		 labelsTrain[i] = 1;
+	        	 }
+	        	  
+	        	 String[] embeddingArray1 = Arrays.copyOf(embedArray1, 300);
+	        	 String[] embeddingArray2 = Arrays.copyOf(embedArray2, 300);
+	        	 for(int k= embedArray1.length-1;k<300;k++)
+	        	 {
+	        		 embeddingArray1[k]="1";
+	        	 }
+	        	 for(int k= embedArray2.length-1;k<300;k++)
+	        	 {
+	        		 embeddingArray2[k]="1";
+	        	 }
+	        	 
+	        	 if(h <= (603*arrayTrain.length)-603)
 	        	 {
 		        	 dataTrain[h] = Float.parseFloat(label);
 		        	 h = h + 1;
@@ -431,14 +446,17 @@ public boolean ComparingPageCommunityId(Map<String,List<String>> pageCommunityDi
 		        	 dataTrain[h] = Float.parseFloat(str[1]);
 		        	 h = h + 1;
 		        	 for(int k= 0;k<300;k++)
-		        	 {
-		        		 dataTrain[h+k]=Float.parseFloat(embeddingArray1[k]);
+		        	 {	
+					if(h+k <= (603*arrayTrain.length)-600)
+					{
+		        		  dataTrain[h+k]=Float.parseFloat(embeddingArray1[k]);
+					}
 		        	 }
 		        	 h = h + 301;
 		        	 //System.out.println("h..." + h);
 		        	 for(int k= 0;k<300;k++)
 		        	 {
-		        		 if(h+k < (603*arrayTest.length))
+		        		 if(h+k <= (603*arrayTrain.length)-300)
 		        		 {
 		        		    dataTrain[h+k]=Float.parseFloat(embeddingArray2[k]);
 		        		 }
@@ -450,23 +468,7 @@ public boolean ComparingPageCommunityId(Map<String,List<String>> pageCommunityDi
 	        	 }
 	         }
 	         
-	         /*
-	         b = 0;
-	         for(int l = 0;l < dataTrain.length;l++)
-        	 {
-	        	 if(b == 603)
-	        	 {
-	        		 b = 0;
-        		    colIndexTrain[l]= 0;
-	        	 }
-	        	 else
-	        	 {
-	        		 colIndexTrain[l]= b;
-	        	 }
-	        	 b = b + 1;
-        	 }
-	         */
-	         
+	            
 	         int numColumn = 603;
 	         //DMatrix testMat = new DMatrix(rowHeadersTest, colIndexTest, dataTest, DMatrix.SparseType.CSR, numColumn);
 	         //DMatrix trainMat = new DMatrix(rowHeadersTrain, colIndexTrain, dataTrain, DMatrix.SparseType.CSR, numColumn);
@@ -474,7 +476,7 @@ public boolean ComparingPageCommunityId(Map<String,List<String>> pageCommunityDi
 	         DMatrix trainMat = new DMatrix(dataTrain,arrayTrain.length , numColumn);
 	         testMat.setLabel(labelsTest);
 	         trainMat.setLabel(labelsTrain);
-	         
+	      
 	 		Map<String, Object> params = new HashMap<String, Object>() {
 	 			  {
 	 			    put("eta", 1.0);
@@ -500,8 +502,8 @@ public boolean ComparingPageCommunityId(Map<String,List<String>> pageCommunityDi
 	 				Booster booster = XGBoost.train(trainMat, params, nround, watches, null, null);
 	 				//booster.saveModel("model.bin");
 	 				// dump with feature map
-	 				String[] model_dump_with_feature_map = booster.getModelDump("featureMap.txt", false);
-	 			    //booster = XGBoost.loadModel("model.bin");
+	 				//String[] model_dump_with_feature_map = booster.getModelDump("featureMap.txt", false);
+	 			       //booster = XGBoost.loadModel("model.bin");
 	 			    
 	 				float[][] predicts = booster.predict(testMat);
 	 				System.out.println("predicts..." + predicts[0][0] + " for class 1 and "+predicts[0][1]+"for class 0... The real label was:"+testMat.getLabel()[0]);
@@ -523,7 +525,9 @@ public boolean ComparingPageCommunityId(Map<String,List<String>> pageCommunityDi
 			}
 				 driver.close();
 			} 
+			
 //-----------------------------------------------------------------------------------------------------------
+    
 	public float[] confusionMatrix(DMatrix testMat,float[][] predicts) throws XGBoostError
 	{
 		float[] statisticInfo= new float[5];
@@ -574,6 +578,7 @@ public boolean ComparingPageCommunityId(Map<String,List<String>> pageCommunityDi
 
 	    return true;
 	}
+
 //-------------------------------------------------------------------------------------------------------------
 public void SaveModelToNeo4j(Booster booster,Session session,String tag,float[] statisticInfo,String testtraniTag) throws IOException, XGBoostError
 {
@@ -587,13 +592,22 @@ public void SaveModelToNeo4j(Booster booster,Session session,String tag,float[] 
 				 Values.parameters("tag",tag, "data", bytes,"accuracy",statisticInfo[0],"precision",statisticInfo[1],"errorRate",statisticInfo[2],"recall",statisticInfo[3],"Fscore",statisticInfo[4],"testtrainModelTag",testtraniTag));
 	 }
 }	
+
 //-------------------------------------------------------------------------------------------------------------
+public static String result = "";
 @Description("ModelInference")
-@Procedure(value = "example.ModelInference", mode=Mode.WRITE)
-public void ModelInference(@Name("modelTag") String modelTag,@Name("dataForInference") String dataForInference)
+@Procedure(value = "example.ModelInference")
+public Stream<Output> ModelInference(@Name("modelTag") String modelTag,@Name("dataForInference") String dataForInference)
 {
-		String result = "";
-	    Driver driver = GraphDatabase.driver("bolt://localhost:7687", AuthTokens.basic("neo4j", "123"));
+	 //String fileName = "E:\\neo4j-community-3.5.4-windows\\neo4j-community-3.5.4\\data\\databases\\graph.db";
+	 //File file = new File(fileName);
+	 //db = new GraphDatabaseFactory().newEmbeddedDatabase(file);
+	 Driver driver = GraphDatabase.driver("bolt://localhost:7687", AuthTokens.basic("neo4j", "123"));
+	 Map<String, Object> params = new HashMap<>();
+     params.put("modelTag", modelTag );
+     String query = "MATCH (a:Model { tag: $modelTag } ) RETURN  a.modelData,a.accuracy,a.precision,a.errorRate,a.recall,a.Fscore";
+
+
 		
 		String[] arrayTest = new String[]{};
 		List<String> lstTest = new ArrayList<String>();               
@@ -624,8 +638,8 @@ public void ModelInference(@Name("modelTag") String modelTag,@Name("dataForInfer
 				      testMat.setLabel(testlabel);
 
 				      float[][] predicts = booster.predict(testMat);
-		 			  System.out.println("predicts for nodeID " + str[1]  + " and " + str[2] + " and label 1 is " + predicts[0][0] + "..." );   
-		 			 System.out.println("predicts for nodeID " + str[1]  + " and " + str[2] + " and label 0 is " + predicts[0][1] + "...");   
+		 		      result = "predicts for nodeID " + str[1]  + " and " + str[2] + " and label 1 is " + predicts[0][0] + "..."  + 
+		 		       "predicts for nodeID " + str[1]  + " and " + str[2] + " and label 0 is " + predicts[0][1] + "...";   
 					
 					os.close();
 					
@@ -636,9 +650,22 @@ public void ModelInference(@Name("modelTag") String modelTag,@Name("dataForInfer
 			 });
 			 session.close();
 		 }
-		 driver.close();	
+	  javaModelTrain.Output  res = new javaModelTrain.Output(result);
+	//InputStream in = org.apache.commons.io.IOUtils.toInputStream(result, "UTF-8");
+		 driver.close();
+      List<Output> resultList = new ArrayList<Output>();
+      resultList.add(new Output(result));
+      return resultList.stream();	
 }
+//------------------------------------------------------------------------------------------------------------
+public static class Output {
+    public String out;
+    public Output(String result)
+	{
+		this.out = result;
+        }
 }
 //-------------------------------------------------------------------------------------------------------------
-
+}
+//-------------------------------------------------------------------------------------------------------------
 
