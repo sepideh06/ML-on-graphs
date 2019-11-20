@@ -127,20 +127,20 @@ public class FeatureDistribution {
 			 Float secondShortestPathCitation = (float)-1;
 			 
 			 
-			/* File file = new File("Test.csv");
+			File file = new File("Test.csv");
 			 if(!file.exists()){
 				  file.createNewFile();
 				}else{
 					FileOutputStream writer = new FileOutputStream("Test.csv");
 		            writer.write(("").getBytes());
 		            writer.close();
-				}*/
-			 /*Path p = Paths.get("Test.csv"); 
+				}
+			 Path p = Paths.get("Test.csv"); 
 			 String s = "AuthorID1,AuthorID2,CommonNeighbour,ShortestPathAuthorGraph,SecondShortestPathAuthorGraph,ShortestPathCitationGraph,SecondShortestPathCitationGraph,Label";
-			 Files.write(p, s.getBytes(), StandardOpenOption.APPEND);*/
+			 Files.write(p, s.getBytes(), StandardOpenOption.APPEND);
 			 
 			// System.out.println("Started calculating Features for Authors in Test List......");
-	       /*  for(int i= 0;i < arrayTest.length ;i++)
+	        for(int i= 0;i < arrayTest.length ;i++)
 	         {
 	        	 String[] arrayOfTestData = arrayTest[i].replace("\"", "").replace("[", "").replace("]", "").split(",");
 	        	 parameters = new HashMap<String, Object>();
@@ -262,91 +262,7 @@ public class FeatureDistribution {
 	         }
 	         
 	         System.out.println("Finished calculating Features for Authors in Test List......");
-			 
-	         file = new File("testCommonNeighbour.csv");
-			 if(!file.exists()){
-				  file.createNewFile();
-				}else{
-					FileOutputStream writer = new FileOutputStream("testCommonNeighbour.csv");
-		            writer.write(("").getBytes());
-		            writer.close();
-				}
-			 
-			 file = new File("testShortestPathCoAuthorGraph.csv");
-			 if(!file.exists()){
-				  file.createNewFile();
-				}else{
-					FileOutputStream writer = new FileOutputStream("testShortestPathCoAuthorGraph.csv");
-		            writer.write(("").getBytes());
-		            writer.close();
-				}
-			 
-			 file = new File("testSecondShortestPathCoAuthorGraph.csv");
-			 if(!file.exists()){
-				  file.createNewFile();
-				}else{
-					FileOutputStream writer = new FileOutputStream("testSecondShortestPathCoAuthorGraph.csv");
-		            writer.write(("").getBytes());
-		            writer.close();
-				}
-			 
-			 file = new File("testShortestPathCoCitationGraph.csv");
-			 if(!file.exists()){
-				  file.createNewFile();
-				}else{
-					FileOutputStream writer = new FileOutputStream("testShortestPathCoCitationGraph.csv");
-		            writer.write(("").getBytes());
-		            writer.close();
-				}
-			 
-			 file = new File("testSecondShortestPathCitationGraph.csv");
-			 if(!file.exists()){
-				  file.createNewFile();
-				}else{
-					FileOutputStream writer = new FileOutputStream("testSecondShortestPathCitationGraph.csv");
-		            writer.write(("").getBytes());
-		            writer.close();
-				}
-			 
-			 
-			//WriteToFile testCommonNeighbour HashMap
-	         Path testCommonNeighbour = Paths.get("testCommonNeighbour.csv"); 
-	         for(Map.Entry<Float,Integer> m :commonNeighbourTest.entrySet()){
-	            	 String content = m.getKey()+","+m.getValue()+ System.lineSeparator();
-	            	 Files.write(testCommonNeighbour, content.getBytes(), StandardOpenOption.APPEND);
-	             }
-	             
-	         //WriteToFile ShortestPathInCoAuthorGraph HashMap
-	         Path testShortestPathCoAuthorGraph = Paths.get("testShortestPathCoAuthorGraph.csv");
-             for(Map.Entry<Float,Integer> m :ShortestPathInCoAuthorGraph.entrySet()){
-            	 String content = m.getKey()+","+m.getValue() + System.lineSeparator();
-            	 Files.write(testShortestPathCoAuthorGraph, content.getBytes(), StandardOpenOption.APPEND);
-             }
-	             
-	           //WriteToFile SecondShortestPathInCoAuthorGraph HashMap
-             Path testSecondShortestPathCoAuthorGraph = Paths.get("testSecondShortestPathCoAuthorGraph.csv");
-             for(Map.Entry<Float,Integer> m :SecondShortestPathInCoAuthorGraph.entrySet()){
-            	 String content = m.getKey()+","+m.getValue() + System.lineSeparator();
-            	 Files.write(testSecondShortestPathCoAuthorGraph, content.getBytes(), StandardOpenOption.APPEND);
-             }
-		             
-		             
-	           //WriteToFile ShortestPathInCitationGraph HashMap
-             Path testShortestPathCoCitationGraph = Paths.get("testShortestPathCoCitationGraph.csv");		     
-             for(Map.Entry<Float,Integer> m :ShortestPathInCitationGraph.entrySet()){
-            	 String content = m.getKey()+","+m.getValue() + System.lineSeparator();
-            	 Files.write(testShortestPathCoCitationGraph, content.getBytes(), StandardOpenOption.APPEND);
-             }    
-		             
-		             
-	             //WriteToFile ShortestPathInCitationGraph HashMap
-             Path testSecondShortestPathCitationGraph = Paths.get("testSecondShortestPathCitationGraph.csv");
-             for(Map.Entry<Float,Integer> m :SecondShortestPathInCitationGraph.entrySet()){
-            	 String content = m.getKey()+","+m.getValue() + System.lineSeparator();
-            	 Files.write(testSecondShortestPathCitationGraph, content.getBytes(), StandardOpenOption.APPEND);
-             }        
-             
-             */
+		
              
              //-----------------------------------------------------------------------------------------------------------------------------------------------
              //Generate Same result for Train data as well----------------------------------------------------------------------------------------------------
@@ -430,20 +346,6 @@ public class FeatureDistribution {
 				        			 }
 				    				 
 						         }
-	        		/* }
-	        		 else
-	        		 {
-	        			 ShortestPath = (float)-1;
-	        			 if(ShortestPathInCoAuthorGraph.containsKey(ShortestPath))
-	    				 {
-	        				 ShortestPathInCoAuthorGraph.put(ShortestPath,ShortestPathInCoAuthorGraph.get(ShortestPath)+1);
-	    				 }
-	        			 else
-	        			 {
-	        				 ShortestPathInCoAuthorGraph.put(ShortestPath,1);
-	        			 }
-	    				 
-	        		 }*/
 	        		 //SecondDegreeShortestPathInCoAuthorGraph.............................................................
 	        		// if(Integer.parseInt(arrayOfTrainData[0].toString()) != 7  && Integer.parseInt(arrayOfTrainData[1].toString()) != 8)
 	        		// {
@@ -469,19 +371,7 @@ public class FeatureDistribution {
 			        			 }
 				         
 		        		 }
-	        		/* }
-	        		 else
-	        		 {
-	        				secondShortestPath = (float)-1;
-	        			 	if(SecondShortestPathInCoAuthorGraph.containsKey(secondShortestPath))
-		    				 {
-		        				 SecondShortestPathInCoAuthorGraph.put(secondShortestPath,SecondShortestPathInCoAuthorGraph.get(secondShortestPath) + 1);
-		    				 }
-		        			 else
-		        			 {
-		        				 SecondShortestPathInCoAuthorGraph.put(secondShortestPath,1);
-		        			 }
-	        		 }*/
+	        		
 	        		 
 	        		 //ShortestPathInCitationGraph........................................................................................
 	        		// if(Integer.parseInt(arrayOfTrainData[0].toString()) != 7  && Integer.parseInt(arrayOfTrainData[1].toString()) != 8)
@@ -505,19 +395,7 @@ public class FeatureDistribution {
 			        			 }
 			    				 
 					         }
-	        		/* }
-	        		 else
-	        		 {
-	        			 ShortestPathCitation = (float)-1;
-	        			 if(ShortestPathInCitationGraph.containsKey(ShortestPathCitation))
-	    				 {
-	        				 ShortestPathInCitationGraph.put(ShortestPathCitation,ShortestPathInCitationGraph.get(ShortestPathCitation)+1);
-	    				 }
-	        			 else
-	        			 {
-	        				 ShortestPathInCitationGraph.put(ShortestPathCitation,1);
-	        			 }
-	        		 }*/
+
 		        		 
 		        		 
 		            //SecondShortestpathInCitationGraph		
@@ -544,19 +422,7 @@ public class FeatureDistribution {
 				        				 SecondShortestPathInCitationGraph.put(secondShortestPathCitation,1);
 				        			 }
 					         }	
-	        		/* }
-	        		 else
-	        		 {
-	        			 secondShortestPathCitation = (float)-1;
-	        			 	if(SecondShortestPathInCitationGraph.containsKey(secondShortestPathCitation))
-		    				 {
-	        			 		SecondShortestPathInCitationGraph.put(secondShortestPathCitation,SecondShortestPathInCitationGraph.get(secondShortestPathCitation) + 1);
-		    				 }
-		        			 else
-		        			 {
-		        				 SecondShortestPathInCitationGraph.put(secondShortestPathCitation,1);
-		        			 }
-	        		 }*/
+	        		
 			        		 
 			        		 //Update The File Train.csv
 			        		 s = System.lineSeparator() + arrayOfTrainData[0]+ "," + arrayOfTrainData[1] + "," + commonNeighbour.toString()+ "," + ShortestPath.toString() + "," + secondShortestPath.toString()+ "," + ShortestPathCitation.toString()+ "," + secondShortestPathCitation.toString()+ "," + arrayOfTrainData[2] ;
@@ -565,89 +431,7 @@ public class FeatureDistribution {
 	         
 	   
 	         System.out.println("Finished calculating Features for Authors in Train List......");
-	         file = new File("trainCommonNeighbour1.csv");
-			 if(!file.exists()){
-				  file.createNewFile();
-				}else{
-					FileOutputStream writer = new FileOutputStream("trainCommonNeighbour1.csv");
-		            writer.write(("").getBytes());
-		            writer.close();
-				}
-			 
-			 file = new File("trainShortestPathCoAuthorGraph1.csv");
-			 if(!file.exists()){
-				  file.createNewFile();
-				}else{
-					FileOutputStream writer = new FileOutputStream("trainShortestPathCoAuthorGraph1.csv");
-		            writer.write(("").getBytes());
-		            writer.close();
-				}
-			 
-			 file = new File("trainSecondShortestPathCoAuthorGraph1.csv");
-			 if(!file.exists()){
-				  file.createNewFile();
-				}else{
-					FileOutputStream writer = new FileOutputStream("trainSecondShortestPathCoAuthorGraph1.csv");
-		            writer.write(("").getBytes());
-		            writer.close();
-				}
-			 
-			 file = new File("trainShortestPathCoCitationGraph1.csv");
-			 if(!file.exists()){
-				  file.createNewFile();
-				}else{
-					FileOutputStream writer = new FileOutputStream("trainShortestPathCoCitationGraph1.csv");
-		            writer.write(("").getBytes());
-		            writer.close();
-				}
-			 
-			 file = new File("trainSecondShortestPathCitationGraph1.csv");
-			 if(!file.exists()){
-				  file.createNewFile();
-				}else{
-					FileOutputStream writer = new FileOutputStream("trainSecondShortestPathCitationGraph1.csv");
-		            writer.write(("").getBytes());
-		            writer.close();
-				}
-			 
-			 
-			//WriteToFile testCommonNeighbour HashMap
-	         Path trainCommonNeighbour = Paths.get("trainCommonNeighbour1.csv"); 
-	         for(Map.Entry<Float,Integer> m :commonNeighbourTrain.entrySet()){
-	            	 String content = m.getKey()+","+m.getValue()+ System.lineSeparator();
-	            	 Files.write(trainCommonNeighbour, content.getBytes(), StandardOpenOption.APPEND);
-	             }
-	             
-	         //WriteToFile ShortestPathInCoAuthorGraph HashMap
-	         Path trainShortestPathCoAuthorGraph = Paths.get("trainShortestPathCoAuthorGraph1.csv");
-             for(Map.Entry<Float,Integer> m :ShortestPathInCoAuthorGraph.entrySet()){
-            	 String content = m.getKey()+","+m.getValue() + System.lineSeparator();
-            	 Files.write(trainShortestPathCoAuthorGraph, content.getBytes(), StandardOpenOption.APPEND);
-             }
-	             
-	           //WriteToFile SecondShortestPathInCoAuthorGraph HashMap
-             Path trainSecondShortestPathCoAuthorGraph = Paths.get("trainSecondShortestPathCoAuthorGraph1.csv");
-             for(Map.Entry<Float,Integer> m :SecondShortestPathInCoAuthorGraph.entrySet()){
-            	 String content = m.getKey()+","+m.getValue() + System.lineSeparator();
-            	 Files.write(trainSecondShortestPathCoAuthorGraph, content.getBytes(), StandardOpenOption.APPEND);
-             }
-		             
-		             
-	           //WriteToFile ShortestPathInCitationGraph HashMap
-             Path trainShortestPathCoCitationGraph = Paths.get("trainShortestPathCoCitationGraph1.csv");		     
-             for(Map.Entry<Float,Integer> m :ShortestPathInCitationGraph.entrySet()){
-            	 String content = m.getKey()+","+m.getValue() + System.lineSeparator();
-            	 Files.write(trainShortestPathCoCitationGraph, content.getBytes(), StandardOpenOption.APPEND);
-             }    
-		             
-		             
-	             //WriteToFile ShortestPathInCitationGraph HashMap
-             Path trainSecondShortestPathCitationGraph = Paths.get("trainSecondShortestPathCitationGraph1.csv");
-             for(Map.Entry<Float,Integer> m :SecondShortestPathInCitationGraph.entrySet()){
-            	 String content = m.getKey()+","+m.getValue() + System.lineSeparator();
-            	 Files.write(trainSecondShortestPathCitationGraph, content.getBytes(), StandardOpenOption.APPEND);
-             }        
-             
+	        
              
      		 session.close();
 	         
