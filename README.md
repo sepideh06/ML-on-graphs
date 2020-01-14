@@ -1,0 +1,3 @@
+# ML-on-graphs
+
+In this repository,you can find the files related to my thesis..I employ java and python to do link prediction inside and outside the graph database Neo4j...
